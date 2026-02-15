@@ -1,22 +1,83 @@
 <!DOCTYPE html>
 <html lang="en">
-  
 <head>
-  	<meta charset="utf-8">
-	  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  	<title>libcad</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta
+    name="description"
+    content="libcad is an open source effort to build a highly portable, lightweight CAD core in a self-contained library."
+  />
+  <title>libcad</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="styles.css" />
 </head>
 
-<body>
-	
-  <h1>libcad</h1>	
+<body class="site-body">
+  <div class="noise-layer" aria-hidden="true"></div>
+  <header class="top-frame">
+    <div class="frame-left">
+      <a class="brand" href="/">libcad</a>
+    </div>
+    <nav class="frame-nav" aria-label="Main navigation">
+      <a href="docs/">Docs</a>
+      <a href="demo/">Demo</a>
+    </nav>
+  </header>
 
-	<p>
-		libcad.org
-	</p>
+  <main class="layout">
+    <section class="panel hero-panel">
+      <p class="kicker">Open Source Library</p>
+      <h1>Portable CAD in a small, self-contained runtime.</h1>
+      <p>
+        libcad is built for engineers who want CAD capability without heavyweight
+        platform coupling. The goal is one compact core that can run in browser,
+        native, and constrained environments.
+      </p>
+      <div class="action-row">
+        <a class="button button-primary" href="demo/">Launch Demo</a>
+        <a class="button" href="docs/">Read Docs</a>
+      </div>
+    </section>
 
-	<a href="demo">demo</a>
-	<a href="docs">docs</a>
+    <section class="panel grid-panel">
+      <h2>Design goals</h2>
+      <div class="mini-grid">
+        <article>
+          <h3>Portable first</h3>
+          <p>Consistent behavior across runtimes, with minimal integration overhead.</p>
+        </article>
+        <article>
+          <h3>Lightweight core</h3>
+          <p>Small footprint for fast load times and easier distribution.</p>
+        </article>
+        <article>
+          <h3>Self-contained</h3>
+          <p>Fewer external dependencies and clearer operational boundaries.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel split-panel">
+      <div>
+        <h2>For developers</h2>
+        <p>
+          Start from the docs to understand architecture and API surface, then
+          validate behavior in the interactive demo.
+        </p>
+      </div>
+      <div class="terminal-note" role="note">
+        <p class="terminal-title">status</p>
+        <p>docs: in progress</p>
+        <p>demo: active</p>
+        <p>library: evolving</p>
+      </div>
+    </section>
+  </main>
 
 </body>
 

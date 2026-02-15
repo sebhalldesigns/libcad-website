@@ -1,19 +1,324 @@
 <!DOCTYPE html>
 <html lang="en">
-  
 <head>
-  	<meta charset="utf-8">
-	  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  	<title>libcad documentation</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta
+    name="description"
+    content="Documentation landing page for libcad."
+  />
+  <title>libcad documentation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="../styles.css" />
 </head>
 
-<body>
-	
-  <h1>libcad docs</h1>	
+<body class="site-body docs-page">
+  <div class="noise-layer" aria-hidden="true"></div>
+  <header class="top-frame">
+    <div class="frame-left">
+      <a class="brand" href="../">libcad</a>
+    </div>
+    <nav class="frame-nav" aria-label="Main navigation">
+      <a href="../">Home</a>
+      <a href="../demo/">Demo</a>
+    </nav>
+  </header>
+  <div class="docs-subbar" role="banner" aria-label="Documentation header">
+    <div class="docs-subbar-inner">
+      <div class="docs-subbar-start">
+        <button class="docs-menu-toggle" type="button" aria-controls="docs-sidebar" aria-expanded="true" aria-label="Toggle sidebar">
+          <span class="docs-menu-icon" aria-hidden="true"></span>
+        </button>
+        <p class="docs-subbar-title">Documentation</p>
+      </div>
+    </div>
+  </div>
+  <button class="docs-backdrop" type="button" aria-label="Close documentation menu"></button>
 
-	<p>
-		Working on it...
-	</p>
+  <main class="docs-shell">
+    <aside id="docs-sidebar" class="panel docs-sidebar" aria-label="Documentation navigation">
+      <p class="kicker">libcad docs</p>
+      <div class="docs-sidebar-head">
+        <h1>Reference</h1>
+      </div>
+      <nav>
+        <ul class="sidebar-list">
+          <li><a href="#overview">Overview</a></li>
+          <li><a href="#quickstart">Quick Start</a></li>
+          <li><a href="#concepts">Core Concepts</a></li>
+          <li><a href="#api">API Reference</a></li>
+          <li><a href="#examples">Examples</a></li>
+          <li><a href="#roadmap">Roadmap</a></li>
+        </ul>
+      </nav>
+      <div class="sidebar-footer">
+        <a class="button" href="../demo/">Open Demo</a>
+      </div>
+      <button class="docs-resize-handle" type="button" aria-label="Resize sidebar"></button>
+    </aside>
+
+    <section class="docs-main">
+      <article class="panel docs-card">
+        <section id="overview" class="docs-section">
+        <h2>Overview</h2>
+        <p>
+          libcad is a compact CAD runtime intended for portable deployments.
+          This documentation is structured as a practical reference first: each
+          section aims to help developers integrate, inspect behavior, and ship.
+        </p>
+        </section>
+
+        <section id="quickstart" class="docs-section">
+        <h2>Quick Start</h2>
+        <p>Use this as the baseline integration flow.</p>
+        <pre class="code-block"><code>npm install libcad
+
+import { createModel, Box, exportMesh } from "libcad";
+
+const model = createModel();
+model.add(new Box({ width: 10, height: 6, depth: 4 }));
+const mesh = exportMesh(model);</code></pre>
+        </section>
+
+        <section id="concepts" class="docs-section">
+        <h2>Core Concepts</h2>
+        <div class="reference-table">
+          <div class="reference-row">
+            <p class="reference-key">Model</p>
+            <p class="reference-value">Container for geometry, constraints, and metadata.</p>
+          </div>
+          <div class="reference-row">
+            <p class="reference-key">Primitive</p>
+            <p class="reference-value">Parameterized shape definition (box, cylinder, polyline, etc.).</p>
+          </div>
+          <div class="reference-row">
+            <p class="reference-key">Constraint</p>
+            <p class="reference-value">Relationship rule used to preserve intent through edits.</p>
+          </div>
+          <div class="reference-row">
+            <p class="reference-key">Export</p>
+            <p class="reference-value">Serialized output for rendering, interop, or persistence.</p>
+          </div>
+        </div>
+        </section>
+
+        <section id="api" class="docs-section">
+        <h2>API Reference</h2>
+        <div class="api-item">
+          <p class="api-signature">createModel(options?) -> Model</p>
+          <p>Creates a new model workspace and initializes default units.</p>
+        </div>
+        <div class="api-item">
+          <p class="api-signature">model.add(entity) -> void</p>
+          <p>Registers geometry or operation nodes in the model graph.</p>
+        </div>
+        <div class="api-item">
+          <p class="api-signature">exportMesh(model, format?) -> MeshData</p>
+          <p>Builds triangulated output for rendering or external tooling.</p>
+        </div>
+        </section>
+
+        <section id="examples" class="docs-section">
+        <h2>Examples</h2>
+        <ul class="docs-list">
+          <li><a href="../demo/">Browser demo using libcad runtime</a></li>
+          <li><a href="#">Command-line batch export pipeline (planned)</a></li>
+          <li><a href="#">Constraint editing walkthrough (planned)</a></li>
+        </ul>
+        </section>
+
+        <section id="roadmap" class="docs-section">
+        <h2>Roadmap</h2>
+        <ul class="docs-list">
+          <li>Replace placeholder signatures with generated API docs.</li>
+          <li>Add versioned behavior notes and migration guidance.</li>
+          <li>Document browser and native embedding patterns.</li>
+        </ul>
+        </section>
+      </article>
+    </section>
+  </main>
+  <script>
+    (function () {
+      const mobileMq = window.matchMedia("(max-width: 700px)");
+      const toggle = document.querySelector(".docs-menu-toggle");
+      const sidebar = document.getElementById("docs-sidebar");
+      const backdrop = document.querySelector(".docs-backdrop");
+      const resizeHandle = document.querySelector(".docs-resize-handle");
+      const sidebarLinks = document.querySelectorAll(".sidebar-list a");
+      const docsMain = document.querySelector(".docs-main");
+      const root = document.documentElement;
+      const docsMainMax = 980;
+      const docsGap = 12;
+      const docsEdgeGap = 12;
+      const minSidebarWidth = 180;
+      const maxSidebarWidth = 420;
+      let dragging = false;
+      let dragStartX = 0;
+      let dragStartWidth = 0;
+      let dragCenteredMode = false;
+
+      if (!toggle || !sidebar || !backdrop || !docsMain) {
+        return;
+      }
+
+      function setOpen(open) {
+        const shouldOpen = Boolean(open);
+        document.body.classList.toggle("docs-nav-open", shouldOpen);
+        toggle.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
+        sidebar.setAttribute("aria-hidden", shouldOpen ? "false" : "true");
+      }
+
+      function setCollapsed(collapsed) {
+        const shouldCollapse = Boolean(collapsed);
+        document.body.classList.toggle("docs-sidebar-collapsed", shouldCollapse);
+        toggle.setAttribute("aria-expanded", shouldCollapse ? "false" : "true");
+      }
+
+      function syncLayoutMode() {
+        if (mobileMq.matches) {
+          document.body.classList.remove("docs-centered-mode");
+          return false;
+        }
+
+        const sidebarWidth = sidebar.getBoundingClientRect().width;
+        const isCentered = document.body.classList.contains("docs-centered-mode");
+        const widthForEntryCheck = isCentered ? sidebarWidth : maxSidebarWidth;
+        const requiredWidth = docsMainMax + 2 * (docsGap + widthForEntryCheck + docsEdgeGap);
+        const shouldCenter = window.innerWidth >= requiredWidth;
+        document.body.classList.toggle("docs-centered-mode", shouldCenter);
+        return shouldCenter;
+      }
+
+      function syncForViewport() {
+        if (mobileMq.matches) {
+          document.body.classList.remove("docs-sidebar-collapsed");
+          setOpen(false);
+          sidebar.setAttribute("aria-hidden", "true");
+          toggle.setAttribute("aria-expanded", "false");
+          return;
+        }
+
+        document.body.classList.remove("docs-nav-open");
+        sidebar.setAttribute("aria-hidden", "false");
+        sidebar.removeAttribute("aria-hidden");
+        syncLayoutMode();
+        setCollapsed(document.body.classList.contains("docs-sidebar-collapsed"));
+      }
+
+      function clampSidebarWidth(width) {
+        return Math.min(maxSidebarWidth, Math.max(minSidebarWidth, width));
+      }
+
+      function setSidebarWidth(width) {
+        root.style.setProperty("--docs-sidebar-width-live", clampSidebarWidth(width) + "px");
+        syncLayoutMode();
+        syncSubbarOffset();
+      }
+
+      function syncSubbarOffset() {
+        if (mobileMq.matches) {
+          root.style.removeProperty("--docs-subbar-left-live");
+          return;
+        }
+
+        const isCollapsed = document.body.classList.contains("docs-sidebar-collapsed");
+        const sourceLeft = isCollapsed
+          ? docsMain.getBoundingClientRect().left
+          : sidebar.getBoundingClientRect().left;
+
+        root.style.setProperty("--docs-subbar-left-live", Math.max(0, sourceLeft) + "px");
+      }
+
+      toggle.addEventListener("click", function () {
+        if (mobileMq.matches) {
+          setOpen(!document.body.classList.contains("docs-nav-open"));
+          return;
+        }
+
+        setCollapsed(!document.body.classList.contains("docs-sidebar-collapsed"));
+        syncSubbarOffset();
+      });
+
+      backdrop.addEventListener("click", function () {
+        setOpen(false);
+      });
+
+      sidebarLinks.forEach(function (link) {
+        link.addEventListener("click", function () {
+          if (mobileMq.matches) {
+            setOpen(false);
+          }
+        });
+      });
+
+      if (typeof mobileMq.addEventListener === "function") {
+        mobileMq.addEventListener("change", syncForViewport);
+      } else if (typeof mobileMq.addListener === "function") {
+        mobileMq.addListener(syncForViewport);
+      }
+
+      window.addEventListener("resize", function () {
+        syncLayoutMode();
+        syncSubbarOffset();
+      });
+
+      if (resizeHandle) {
+        resizeHandle.addEventListener("pointerdown", function (event) {
+          if (mobileMq.matches) {
+            return;
+          }
+
+          event.preventDefault();
+          dragging = true;
+          dragStartX = event.clientX;
+          dragStartWidth = sidebar.getBoundingClientRect().width;
+          dragCenteredMode = document.body.classList.contains("docs-centered-mode");
+          resizeHandle.setPointerCapture(event.pointerId);
+        });
+
+        resizeHandle.addEventListener("pointermove", function (event) {
+          if (!dragging || mobileMq.matches) {
+            return;
+          }
+
+          const delta = event.clientX - dragStartX;
+          const nextWidth = dragCenteredMode
+            ? dragStartWidth - delta
+            : dragStartWidth + delta;
+          setSidebarWidth(nextWidth);
+        });
+
+        function endResize(event) {
+          if (!dragging) {
+            return;
+          }
+
+          dragging = false;
+          syncSubbarOffset();
+          if (event && typeof event.pointerId === "number") {
+            resizeHandle.releasePointerCapture(event.pointerId);
+          }
+        }
+
+        resizeHandle.addEventListener("pointerup", endResize);
+        resizeHandle.addEventListener("pointercancel", endResize);
+        resizeHandle.addEventListener("dblclick", function () {
+          root.style.removeProperty("--docs-sidebar-width-live");
+          syncLayoutMode();
+          syncSubbarOffset();
+        });
+      }
+
+      syncForViewport();
+      syncSubbarOffset();
+    })();
+  </script>
 
 </body>
 
