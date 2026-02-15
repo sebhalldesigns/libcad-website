@@ -18,10 +18,9 @@
   --highlight: #9b6b2f;
   --shadow: rgba(23, 37, 48, 0.18);
   --mono: "Iosevka", "IBM Plex Mono", "Courier New", monospace;
-  --docs-main-max: 980px;
-  --docs-sidebar-width-live: clamp(180px, 20vw, 250px);
-  --docs-gap: 12px;
-  --docs-edge-gap: 12px;
+  --docs-area-max: 1320px;
+  --docs-sidebar-width-live: 260px;
+  --docs-splitter-w: 8px;
 }
 
 *,
@@ -46,7 +45,7 @@ body.site-body {
 }
 
 .docs-page {
-  --docs-top-frame-h: 52px;
+  --docs-top-frame-h: 44px;
   --docs-subbar-h: 36px;
   --docs-header-total: calc(var(--docs-top-frame-h) + var(--docs-subbar-h));
 }
@@ -67,11 +66,13 @@ body.site-body {
   position: sticky;
   top: 0;
   z-index: 3;
+  width: 100%;
+  margin: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.75rem 1rem;
+  padding: 0.45rem max(1rem, calc((100vw - 1300px) / 2));
   border-top: 2px solid #f8fafc;
   border-bottom: 1px solid var(--line);
   background: linear-gradient(180deg, #f6f8fa 0%, #dbe2e8 100%);
@@ -114,17 +115,18 @@ body.site-body {
   color: var(--accent-strong);
   font-family: var(--mono);
   font-size: 0.84rem;
-  border: 1px solid var(--line);
-  background: linear-gradient(180deg, #f7f9fb, #e5ebf0);
-  padding: 0.32rem 0.65rem;
+  padding: 0;
+  border: 0;
+  background: none;
 }
 
 .frame-nav a:hover {
-  background: linear-gradient(180deg, #fdfefe, #edf2f7);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .layout {
-  width: min(1100px, 100% - 2rem);
+  width: min(1300px, 100% - 2rem);
   margin: 1.1rem auto 2.5rem;
   display: grid;
   gap: 1rem;
@@ -133,6 +135,7 @@ body.site-body {
 .panel {
   position: relative;
   border: 1px solid var(--line);
+  border-radius: 3px;
   background:
     linear-gradient(180deg, var(--panel) 0%, var(--panel-muted) 100%);
   padding: 1.25rem;
@@ -175,6 +178,7 @@ body.site-body {
   text-decoration: none;
   color: var(--text);
   border: 1px solid var(--line);
+  border-radius: 3px;
   padding: 0.45rem 0.78rem;
   background: linear-gradient(180deg, #f6f8fa, #e8edf1);
   font-family: var(--mono);
@@ -218,6 +222,7 @@ p {
 
 .mini-grid article {
   border: 1px solid #9baab6;
+  border-radius: 3px;
   background: linear-gradient(180deg, #f9fbfd 0%, #e5ebef 100%);
   padding: 0.85rem;
 }
@@ -230,6 +235,7 @@ p {
 
 .terminal-note {
   border: 1px solid #93a2af;
+  border-radius: 3px;
   background: linear-gradient(180deg, #e9edf1, #d9e0e6);
   padding: 0.75rem;
   font-family: var(--mono);
@@ -245,6 +251,7 @@ p {
 .code-block {
   margin: 0;
   border: 1px solid #8a9aa7;
+  border-radius: 3px;
   background: #e8edf1;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
   padding: 0.8rem;
@@ -267,39 +274,35 @@ p {
 }
 
 .docs-sidebar {
-  position: fixed;
-  z-index: 2;
-  left: 0;
-  top: var(--docs-header-total);
+  position: sticky;
+  z-index: 1;
+  top: var(--docs-header-total-live, var(--docs-header-total));
   width: var(--docs-sidebar-width-live);
-  height: calc(100vh - var(--docs-header-total));
-  max-height: calc(100vh - var(--docs-header-total));
+  flex: 0 0 var(--docs-sidebar-width-live);
+  align-self: flex-start;
+  max-height: calc(100vh - var(--docs-header-total-live, var(--docs-header-total)) - 2px);
+  height: calc(100vh - var(--docs-header-total-live, var(--docs-header-total)) - 2px);
   overflow: auto;
   padding: 1rem 0.65rem 1rem;
   animation: none;
-  min-width: 180px;
-  max-width: 420px;
+  min-width: 0;
+  max-width: none;
+  transition: opacity 80ms linear;
 }
 
 .panel.docs-sidebar {
+  border-radius: 0;
   padding: 1rem 0.65rem 1rem;
   border-top: 0;
   border-bottom: 0;
-  box-shadow:
-    inset 1px 0 0 rgba(255, 255, 255, 0.7),
-    inset -1px 0 0 rgba(0, 0, 0, 0.08),
-    0 2px 10px -8px var(--shadow);
-}
-
-.docs-page:not(.docs-centered-mode) .panel.docs-sidebar {
-  box-shadow:
-    inset -1px 0 0 rgba(0, 0, 0, 0.08),
-    0 2px 10px -8px var(--shadow);
+  border-left: 1px solid var(--line);
+  border-right: 0;
+  box-shadow: 0 2px 10px -8px var(--shadow);
 }
 
 .docs-subbar {
   position: sticky;
-  top: var(--docs-top-frame-h);
+  top: var(--docs-top-frame-h-live, var(--docs-top-frame-h));
   z-index: 6;
   border-bottom: 1px solid var(--line);
   background: linear-gradient(180deg, #f1f5f8 0%, #e3e9ee 100%);
@@ -319,7 +322,7 @@ p {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  margin-left: var(--docs-subbar-left-live, 1rem);
+  margin-left: var(--docs-subbar-left-live, 0.4rem);
 }
 
 .docs-subbar-title {
@@ -333,9 +336,6 @@ p {
 
 .docs-page .top-frame {
   z-index: 7;
-  min-height: var(--docs-top-frame-h);
-  padding-top: 0;
-  padding-bottom: 0;
 }
 
 .docs-sidebar h1 {
@@ -357,6 +357,7 @@ p {
   color: var(--accent-strong);
   padding: 0.32rem 0.5rem;
   border: 1px solid #a0afba;
+  border-radius: 3px;
   background: linear-gradient(180deg, #f9fbfc, #e7edf2);
   font-family: var(--mono);
   font-size: 0.82rem;
@@ -380,7 +381,7 @@ p {
   align-items: center;
   justify-content: center;
   appearance: none;
-  border-radius: 0;
+  border-radius: 3px;
   line-height: 1.2;
   border: 1px solid var(--line);
   background: linear-gradient(180deg, #f8fafc, #e7edf2);
@@ -432,24 +433,89 @@ p {
 }
 
 .docs-main {
-  width: min(var(--docs-main-max), calc(100% - var(--docs-sidebar-width-live) - var(--docs-gap) - 1rem));
-  margin: 1.1rem 1rem 2.5rem calc(var(--docs-sidebar-width-live) + var(--docs-gap));
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+}
+
+.panel.docs-card {
+  border-radius: 0;
+  border-top: 0;
+  border-bottom: 0;
+  border-left: 0;
+  padding-top: 2.2rem;
+  padding-bottom: 2.2rem;
+}
+
+.docs-page.docs-sidebar-collapsed .panel.docs-card {
+  border-left: 1px solid var(--line);
 }
 
 .docs-page.docs-sidebar-collapsed .docs-sidebar {
-  transform: translateX(calc(-100% - 1.2rem));
-  visibility: hidden;
+  width: 0;
+  flex-basis: 0;
+  border-width: 0;
+  padding-left: 0;
+  padding-right: 0;
+  opacity: 0;
+  overflow: hidden;
   pointer-events: none;
 }
 
-.docs-page.docs-sidebar-collapsed .docs-main {
-  width: min(var(--docs-main-max), calc(100% - 2rem));
-  margin: 1.1rem auto 2.5rem;
+.docs-shell {
+  width: min(var(--docs-area-max), 100vw);
+  min-height: calc(100vh - var(--docs-header-total-live, var(--docs-header-total)));
+  margin: 0 auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
 }
 
-.docs-shell {
-  width: 100%;
-  min-height: calc(100vh - 4.5rem);
+.docs-splitter {
+  position: sticky;
+  top: var(--docs-header-total-live, var(--docs-header-total));
+  flex: 0 0 var(--docs-splitter-w);
+  width: var(--docs-splitter-w);
+  align-self: flex-start;
+  height: calc(100vh - var(--docs-header-total-live, var(--docs-header-total)));
+  border: 0;
+  background: linear-gradient(180deg, var(--panel) 0%, var(--panel-muted) 100%);
+  padding: 0;
+  margin: 0;
+  cursor: ew-resize;
+  transition: none;
+}
+
+.docs-splitter::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1px;
+  height: 100%;
+  transform: translate(-50%, -50%);
+  background: #5f7280;
+  transition: background-color 120ms ease-out;
+}
+
+.docs-page.docs-breakpoint-switch .docs-sidebar {
+  transition: none !important;
+}
+
+.docs-splitter:hover {
+  background: linear-gradient(180deg, var(--panel) 0%, var(--panel-muted) 100%);
+}
+
+.docs-splitter:hover::before {
+  background: #445865;
+}
+
+.docs-page.docs-sidebar-collapsed .docs-splitter {
+  width: 0;
+  flex-basis: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .docs-section + .docs-section {
@@ -468,6 +534,8 @@ p {
 
 .reference-table {
   border: 1px solid #99a9b6;
+  border-radius: 3px;
+  overflow: hidden;
 }
 
 .reference-row {
@@ -499,6 +567,7 @@ p {
 
 .api-item {
   border: 1px solid #9caab5;
+  border-radius: 3px;
   background: linear-gradient(180deg, #f8fafc, #e8eef3);
   padding: 0.7rem;
 }
@@ -525,67 +594,6 @@ p {
 
 .docs-list a {
   color: var(--accent-strong);
-}
-
-.docs-resize-handle {
-  position: absolute;
-  top: 0;
-  right: -10px;
-  width: 20px;
-  height: 100%;
-  padding: 0;
-  border: 0;
-  cursor: ew-resize;
-  background: transparent;
-}
-
-.docs-resize-handle::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  right: 9px;
-  width: 3px;
-  height: 76px;
-  transform: translateY(-50%);
-  background: linear-gradient(180deg, #4f6879, #6f8696);
-  box-shadow: 5px 0 0 #4f6879;
-  opacity: 0.95;
-}
-
-.docs-resize-handle::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  right: 8px;
-  width: 4px;
-  height: 100%;
-  background: rgba(61, 84, 101, 0.12);
-}
-
-.docs-page.docs-centered-mode .docs-sidebar {
-  left: auto;
-  right: calc(50% + (var(--docs-main-max) / 2) + var(--docs-gap));
-}
-
-.docs-page.docs-centered-mode .docs-main {
-  width: var(--docs-main-max);
-  margin: 1.1rem auto 2.5rem;
-}
-
-.docs-page.docs-centered-mode .docs-resize-handle {
-  left: -10px;
-  right: auto;
-}
-
-.docs-page.docs-centered-mode .docs-resize-handle::before {
-  left: 9px;
-  right: auto;
-  box-shadow: -5px 0 0 #4f6879;
-}
-
-.docs-page.docs-centered-mode .docs-resize-handle::after {
-  left: 8px;
-  right: auto;
 }
 
 @keyframes panel-in {
@@ -650,39 +658,45 @@ p {
     z-index: 5;
     left: 0;
     top: var(--docs-header-total);
-    width: calc(100vw - 1rem);
+    width: 100vw;
     max-width: none;
     min-width: 0;
     height: calc(100vh - var(--docs-header-total));
     max-height: calc(100vh - var(--docs-header-total));
     margin: 0;
-    padding: 1rem;
-    transform: translateX(-110%);
+    padding: 1rem 0.65rem;
+    transform: translateX(-100%);
     transition: transform 180ms ease-out;
     box-shadow: 0 10px 32px rgba(0, 0, 0, 0.22);
-    visibility: hidden;
+    opacity: 1;
+    pointer-events: none;
   }
 
   .panel.docs-sidebar {
     padding: 1rem 0.65rem;
+    border-left: 1px solid var(--line);
   }
 
-  .docs-resize-handle {
+  .docs-splitter {
     display: none;
   }
 
   .docs-main {
-    width: min(1100px, 100% - 1rem);
-    margin: 1.1rem auto 2rem;
+    width: 100%;
+    margin: 0;
+    min-width: 0;
   }
 
   .docs-shell {
     width: 100%;
+    min-height: auto;
+    margin: 0;
+    display: block;
   }
 
   .docs-nav-open .docs-sidebar {
     transform: translateX(0);
-    visibility: visible;
+    pointer-events: auto;
   }
 
   .docs-nav-open .docs-backdrop {

@@ -59,8 +59,8 @@
       <div class="sidebar-footer">
         <a class="button" href="../demo/">Open Demo</a>
       </div>
-      <button class="docs-resize-handle" type="button" aria-label="Resize sidebar"></button>
     </aside>
+    <button class="docs-splitter" type="button" aria-label="Resize sidebar"></button>
 
     <section class="docs-main">
       <article class="panel docs-card">
@@ -149,21 +149,24 @@ const mesh = exportMesh(model);</code></pre>
       const toggle = document.querySelector(".docs-menu-toggle");
       const sidebar = document.getElementById("docs-sidebar");
       const backdrop = document.querySelector(".docs-backdrop");
-      const resizeHandle = document.querySelector(".docs-resize-handle");
+      const splitter = document.querySelector(".docs-splitter");
+      const topFrame = document.querySelector(".top-frame");
+      const docsSubbar = document.querySelector(".docs-subbar");
       const sidebarLinks = document.querySelectorAll(".sidebar-list a");
+      const docsShell = document.querySelector(".docs-shell");
       const docsMain = document.querySelector(".docs-main");
       const root = document.documentElement;
-      const docsMainMax = 980;
-      const docsGap = 12;
-      const docsEdgeGap = 12;
       const minSidebarWidth = 180;
       const maxSidebarWidth = 420;
+      const defaultSidebarWidth = 260;
+      const minMainDesktopWidth = 560;
       let dragging = false;
       let dragStartX = 0;
       let dragStartWidth = 0;
-      let dragCenteredMode = false;
+      let sidebarWidth = defaultSidebarWidth;
+      let desktopCollapsed = document.body.classList.contains("docs-sidebar-collapsed");
 
-      if (!toggle || !sidebar || !backdrop || !docsMain) {
+      if (!toggle || !sidebar || !backdrop || !docsMain || !docsShell || !splitter) {
         return;
       }
 
@@ -176,23 +179,30 @@ const mesh = exportMesh(model);</code></pre>
 
       function setCollapsed(collapsed) {
         const shouldCollapse = Boolean(collapsed);
+        desktopCollapsed = shouldCollapse;
         document.body.classList.toggle("docs-sidebar-collapsed", shouldCollapse);
         toggle.setAttribute("aria-expanded", shouldCollapse ? "false" : "true");
+        sidebar.setAttribute("aria-hidden", shouldCollapse ? "true" : "false");
       }
 
-      function syncLayoutMode() {
-        if (mobileMq.matches) {
-          document.body.classList.remove("docs-centered-mode");
-          return false;
-        }
+      function getSplitterWidth() {
+        const splitterWidth = parseFloat(getComputedStyle(root).getPropertyValue("--docs-splitter-w"));
+        return Number.isFinite(splitterWidth) ? splitterWidth : 14;
+      }
 
-        const sidebarWidth = sidebar.getBoundingClientRect().width;
-        const isCentered = document.body.classList.contains("docs-centered-mode");
-        const widthForEntryCheck = isCentered ? sidebarWidth : maxSidebarWidth;
-        const requiredWidth = docsMainMax + 2 * (docsGap + widthForEntryCheck + docsEdgeGap);
-        const shouldCenter = window.innerWidth >= requiredWidth;
-        document.body.classList.toggle("docs-centered-mode", shouldCenter);
-        return shouldCenter;
+      function clampSidebarWidth(width) {
+        const shellWidth = docsShell.getBoundingClientRect().width;
+        const maxByShell = shellWidth - getSplitterWidth() - minMainDesktopWidth;
+        const safeMax = Math.max(minSidebarWidth, Math.min(maxSidebarWidth, maxByShell));
+        return Math.min(safeMax, Math.max(minSidebarWidth, width));
+      }
+
+      function applySidebarWidth() {
+        if (mobileMq.matches) {
+          return;
+        }
+        sidebarWidth = clampSidebarWidth(sidebarWidth);
+        root.style.setProperty("--docs-sidebar-width-live", `${sidebarWidth}px`);
       }
 
       function syncForViewport() {
@@ -205,19 +215,14 @@ const mesh = exportMesh(model);</code></pre>
         }
 
         document.body.classList.remove("docs-nav-open");
-        sidebar.setAttribute("aria-hidden", "false");
-        sidebar.removeAttribute("aria-hidden");
-        syncLayoutMode();
-        setCollapsed(document.body.classList.contains("docs-sidebar-collapsed"));
-      }
-
-      function clampSidebarWidth(width) {
-        return Math.min(maxSidebarWidth, Math.max(minSidebarWidth, width));
+        applySidebarWidth();
+        setCollapsed(desktopCollapsed);
+        syncSubbarOffset();
       }
 
       function setSidebarWidth(width) {
-        root.style.setProperty("--docs-sidebar-width-live", clampSidebarWidth(width) + "px");
-        syncLayoutMode();
+        sidebarWidth = width;
+        applySidebarWidth();
         syncSubbarOffset();
       }
 
@@ -227,12 +232,29 @@ const mesh = exportMesh(model);</code></pre>
           return;
         }
 
-        const isCollapsed = document.body.classList.contains("docs-sidebar-collapsed");
-        const sourceLeft = isCollapsed
-          ? docsMain.getBoundingClientRect().left
-          : sidebar.getBoundingClientRect().left;
+        const shellLeft = docsShell.getBoundingClientRect().left;
+        root.style.setProperty("--docs-subbar-left-live", Math.max(0, shellLeft) + "px");
+      }
 
-        root.style.setProperty("--docs-subbar-left-live", Math.max(0, sourceLeft) + "px");
+      function syncHeaderOffset() {
+        if (!topFrame || !docsSubbar) {
+          return;
+        }
+        const topFrameHeight = topFrame.getBoundingClientRect().height;
+        const subbarHeight = docsSubbar.getBoundingClientRect().height;
+        const headerOffset = topFrameHeight + subbarHeight;
+        root.style.setProperty("--docs-top-frame-h-live", `${topFrameHeight}px`);
+        root.style.setProperty("--docs-header-total-live", `${headerOffset}px`);
+      }
+
+      function syncForViewportWithoutTransition() {
+        document.body.classList.add("docs-breakpoint-switch");
+        syncForViewport();
+        requestAnimationFrame(function () {
+          requestAnimationFrame(function () {
+            document.body.classList.remove("docs-breakpoint-switch");
+          });
+        });
       }
 
       toggle.addEventListener("click", function () {
@@ -258,63 +280,60 @@ const mesh = exportMesh(model);</code></pre>
       });
 
       if (typeof mobileMq.addEventListener === "function") {
-        mobileMq.addEventListener("change", syncForViewport);
+        mobileMq.addEventListener("change", syncForViewportWithoutTransition);
       } else if (typeof mobileMq.addListener === "function") {
-        mobileMq.addListener(syncForViewport);
+        mobileMq.addListener(syncForViewportWithoutTransition);
       }
 
       window.addEventListener("resize", function () {
-        syncLayoutMode();
+        syncHeaderOffset();
+        applySidebarWidth();
         syncSubbarOffset();
       });
 
-      if (resizeHandle) {
-        resizeHandle.addEventListener("pointerdown", function (event) {
-          if (mobileMq.matches) {
-            return;
-          }
-
-          event.preventDefault();
-          dragging = true;
-          dragStartX = event.clientX;
-          dragStartWidth = sidebar.getBoundingClientRect().width;
-          dragCenteredMode = document.body.classList.contains("docs-centered-mode");
-          resizeHandle.setPointerCapture(event.pointerId);
-        });
-
-        resizeHandle.addEventListener("pointermove", function (event) {
-          if (!dragging || mobileMq.matches) {
-            return;
-          }
-
-          const delta = event.clientX - dragStartX;
-          const nextWidth = dragCenteredMode
-            ? dragStartWidth - delta
-            : dragStartWidth + delta;
-          setSidebarWidth(nextWidth);
-        });
-
-        function endResize(event) {
-          if (!dragging) {
-            return;
-          }
-
-          dragging = false;
-          syncSubbarOffset();
-          if (event && typeof event.pointerId === "number") {
-            resizeHandle.releasePointerCapture(event.pointerId);
-          }
+      splitter.addEventListener("pointerdown", function (event) {
+        if (mobileMq.matches || document.body.classList.contains("docs-sidebar-collapsed")) {
+          return;
         }
 
-        resizeHandle.addEventListener("pointerup", endResize);
-        resizeHandle.addEventListener("pointercancel", endResize);
-        resizeHandle.addEventListener("dblclick", function () {
-          root.style.removeProperty("--docs-sidebar-width-live");
-          syncLayoutMode();
-          syncSubbarOffset();
-        });
+        event.preventDefault();
+        dragging = true;
+        dragStartX = event.clientX;
+        dragStartWidth = sidebar.getBoundingClientRect().width;
+        splitter.setPointerCapture(event.pointerId);
+      });
+
+      splitter.addEventListener("pointermove", function (event) {
+        if (!dragging || mobileMq.matches || document.body.classList.contains("docs-sidebar-collapsed")) {
+          return;
+        }
+
+        const delta = event.clientX - dragStartX;
+        setSidebarWidth(dragStartWidth + delta);
+      });
+
+      function endResize(event) {
+        if (!dragging) {
+          return;
+        }
+
+        dragging = false;
+        if (event && typeof event.pointerId === "number") {
+          splitter.releasePointerCapture(event.pointerId);
+        }
       }
 
+      splitter.addEventListener("pointerup", endResize);
+      splitter.addEventListener("pointercancel", endResize);
+      splitter.addEventListener("dblclick", function () {
+        setSidebarWidth(defaultSidebarWidth);
+      });
+
+      const initialWidth = parseFloat(getComputedStyle(root).getPropertyValue("--docs-sidebar-width-live"));
+      if (Number.isFinite(initialWidth)) {
+        sidebarWidth = initialWidth;
+      }
+      syncHeaderOffset();
       syncForViewport();
       syncSubbarOffset();
     })();
