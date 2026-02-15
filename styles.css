@@ -134,6 +134,7 @@ body.site-body {
 
 .panel {
   position: relative;
+  min-width: 0;
   border: 1px solid var(--line);
   border-radius: 3px;
   background:
@@ -263,6 +264,7 @@ p {
 
 .code-block {
   margin: 0;
+  max-width: 100%;
   border: 1px solid #8a9aa7;
   border-radius: 3px;
   background: #e8edf1;
@@ -781,10 +783,25 @@ p {
   .top-frame {
     flex-direction: column;
     align-items: flex-start;
+    gap: 0.4rem;
+    padding-left: 0.65rem;
+    padding-right: 0.65rem;
+  }
+
+  .frame-nav {
+    flex-wrap: wrap;
+    row-gap: 0.22rem;
+    column-gap: 0.65rem;
   }
 
   .frame-left {
     flex-wrap: wrap;
+  }
+
+  .practice-panel .code-block {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 
   .docs-page .top-frame {
