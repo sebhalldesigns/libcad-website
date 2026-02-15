@@ -14,6 +14,7 @@
     href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap"
     rel="stylesheet"
   />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs/themes/prism.min.css" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 
@@ -24,6 +25,8 @@
       <a class="brand" href="/">libcad</a>
     </div>
     <nav class="frame-nav" aria-label="Main navigation">
+      <a href="/">Home</a>
+      <a href="download.html">Download</a>
       <a href="docs/">Docs</a>
       <a href="demo/">Demo</a>
     </nav>
@@ -31,54 +34,89 @@
 
   <main class="layout">
     <section class="panel hero-panel">
-      <p class="kicker">Open Source Library</p>
-      <h1>Portable CAD in a small, self-contained runtime.</h1>
+      <h1>libcad</h1>
+      <p class="kicker">CAD reimagined</p>
       <p>
-        libcad is built for engineers who want CAD capability without heavyweight
-        platform coupling. The goal is one compact core that can run in browser,
-        native, and constrained environments.
+        libcad introduces a novel concept: CAD as a library. Built from the
+        ground up for ease of scripting and integration, libcad can be used for
+        any application, from custom design environments to lightweight web
+        rendering and design automation.
       </p>
       <div class="action-row">
-        <a class="button button-primary" href="demo/">Launch Demo</a>
-        <a class="button" href="docs/">Read Docs</a>
+        <a class="button button-primary" href="https://github.com/sebhalldesigns/libcad">GitHub</a>
+        <a class="button" href="download.html">Download</a>
+        <a class="button" href="docs/">Docs</a>
+        <a class="button" href="demo/">Demo</a>
       </div>
     </section>
 
-    <section class="panel grid-panel">
-      <h2>Design goals</h2>
+    <section class="panel grid-panel why-panel">
+      <h2>Why libcad?</h2>
       <div class="mini-grid">
         <article>
-          <h3>Portable first</h3>
-          <p>Consistent behavior across runtimes, with minimal integration overhead.</p>
+          <h3>Completely Free</h3>
+          <p>libcad is provided under the permissive MIT license, allowing use for any purpose, commercial or non-commercial.</p>
         </article>
         <article>
-          <h3>Lightweight core</h3>
-          <p>Small footprint for fast load times and easier distribution.</p>
+          <h3>Cross-Platform</h3>
+          <p>libcad runs on all major platforms, including Windows, macOS, Linux, Web and mobile.</p>
         </article>
         <article>
-          <h3>Self-contained</h3>
-          <p>Fewer external dependencies and clearer operational boundaries.</p>
+          <h3>Self-Contained</h3>
+          <p>libcad depends only on standard utilities provided by your OS. All other dependencies are embedded directly into the library itself.</p>
+        </article>
+        <article>
+          <h3>Lightweight</h3>
+          <p>The entire library is built into a single file that measures less than 10MB.</p>
+        </article>
+        <article>
+          <h3>Scriptable</h3>
+          <p>libcad is built with scripting in mind, enabling easy integration into any application or workflow.</p>
+        </article>
+        <article>
+          <h3>Multi-Language</h3>
+          <p>libcad itself is written in C, but bindings are available for C++, JavaScript and Python.</p>
         </article>
       </div>
     </section>
 
-    <section class="panel split-panel">
-      <div>
-        <h2>For developers</h2>
-        <p>
-          Start from the docs to understand architecture and API surface, then
-          validate behavior in the interactive demo.
-        </p>
-      </div>
-      <div class="terminal-note" role="note">
-        <p class="terminal-title">status</p>
-        <p>docs: in progress</p>
-        <p>demo: active</p>
-        <p>library: evolving</p>
-      </div>
+    <section class="panel practice-panel">
+      <h2>libcad in Practice</h2>
+      <p>Example 1: Creating and exporting a cube to STL</p>
+      <pre class="code-block"><code class="language-python">import cad
+
+# create a new document
+document = cad.new_document("cube")
+
+# create a sketch and add a centered rectangle to it (100x100mm)
+sketch = document.add_sketch()
+rectangle = sketch.add_center_rect(0, 0, 100, 100)
+
+# extrude the rectangle into a cube with a height of 100mm
+cube = rectangle.extrude(100)
+
+# export the cube as an STL file
+cube.export_stl("cube.stl")</code></pre>
+
+<p>Example 2: Visualizing a model</p>
+      <pre class="code-block"><code class="language-python">import cad
+
+# load a document
+document = cad.load_document("cube")
+
+# create a view and add a callback to rotate the camera over time
+view = document.create_view()
+view.add_update_callback(
+    lambda time, camera: camera.set_rotation(0, 0, math.sin(time) * 360)
+)
+
+# show the view in a window
+view.show()</code></pre>
     </section>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/prismjs/prism.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-python.min.js"></script>
 </body>
 
 </html>

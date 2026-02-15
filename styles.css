@@ -107,7 +107,7 @@ body.site-body {
 .frame-nav {
   display: flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.9rem;
 }
 
 .frame-nav a {
@@ -151,6 +151,7 @@ body.site-body {
   max-width: 18ch;
   line-height: 1.12;
   font-size: clamp(1.6rem, 2vw + 0.9rem, 2.35rem);
+  font-family: var(--mono);
 }
 
 .hero-panel p {
@@ -220,6 +221,18 @@ p {
   gap: 0.8rem;
 }
 
+.why-panel h2 {
+  font-family: var(--mono);
+}
+
+.why-panel .mini-grid h3 {
+  font-family: var(--mono);
+}
+
+.practice-panel h2 {
+  font-family: var(--mono);
+}
+
 .mini-grid article {
   border: 1px solid #9baab6;
   border-radius: 3px;
@@ -258,10 +271,67 @@ p {
   overflow-x: auto;
 }
 
+.native-tabs {
+  margin-top: 1rem;
+}
+
+.native-tablist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  overflow: hidden;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.native-tab {
+  appearance: none;
+  border: 0;
+  border-right: 1px solid var(--line);
+  background: linear-gradient(180deg, #f6f8fa, #e8edf1);
+  color: var(--text);
+  padding: 0.42rem 0.78rem;
+  font-family: var(--mono);
+  font-size: 0.86rem;
+  cursor: pointer;
+}
+
+.native-tab:last-child {
+  border-right: 0;
+}
+
+.native-tab:hover {
+  background: linear-gradient(180deg, #ffffff, #edf2f5);
+}
+
+.native-tab.is-active {
+  color: #eef4f9;
+  background: linear-gradient(180deg, var(--accent), var(--accent-strong));
+}
+
+.native-tabpanel {
+  margin-top: 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: linear-gradient(180deg, #f9fbfd 0%, #e5ebef 100%);
+  padding: 0.85rem;
+}
+
 .code-block code {
   font-family: var(--mono);
   font-size: 0.85rem;
   color: #243744;
+}
+
+.code-block[class*="language-"],
+.code-block code[class*="language-"] {
+  background: transparent;
+}
+
+.code-block .token {
+  background: transparent !important;
 }
 
 .link-list {

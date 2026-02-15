@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta
+    name="description"
+    content="Download libcad runtime artifacts and integration resources."
+  />
+  <title>libcad Download</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body class="site-body">
+  <div class="noise-layer" aria-hidden="true"></div>
+  <header class="top-frame">
+    <div class="frame-left">
+      <a class="brand" href="/">libcad</a>
+    </div>
+    <nav class="frame-nav" aria-label="Main navigation">
+      <a href="/">Home</a>
+      <a href="download.html">Download</a>
+      <a href="docs/">Docs</a>
+      <a href="demo/">Demo</a>
+    </nav>
+  </header>
+
+  <main class="layout">
+    <section class="panel hero-panel">
+      <h1>Download</h1>
+      <p class="kicker">Runtime Artifacts</p>
+      <p>
+        Get the self-contained build outputs and integration entry points for
+        browser and script-based workflows.
+      </p>
+      <div class="action-row">
+        <a class="button button-primary" href="https://github.com/sebhalldesigns/libcad">GitHub</a>
+        <a class="button" href="#native-sdk">libcad Native SDK</a>
+        <a class="button" href="#web-sdk">libcad Web SDK</a>
+        <a class="button" href="#app-sdk">libcad App SDK</a>
+        <a class="button" href="#democad">democad</a>
+      </div>
+    </section>
+
+    <section id="native-sdk" class="panel">
+      <h2>libcad Native SDK</h2>
+      <p>Native runtime package for desktop and embedded integrations.</p>
+      <div class="native-tabs" aria-label="Native SDK platforms">
+        <div class="native-tablist" role="tablist" aria-label="Platform tabs">
+          <button class="native-tab is-active" id="native-tab-windows" type="button" role="tab" aria-selected="true" aria-controls="native-panel-windows">Windows</button>
+          <button class="native-tab" id="native-tab-macos" type="button" role="tab" aria-selected="false" aria-controls="native-panel-macos" tabindex="-1">macOS</button>
+          <button class="native-tab" id="native-tab-linux" type="button" role="tab" aria-selected="false" aria-controls="native-panel-linux" tabindex="-1">Linux</button>
+        </div>
+        <section class="native-tabpanel" id="native-panel-windows" role="tabpanel" aria-labelledby="native-tab-windows">
+          <p>Windows package with DLL runtime and C/C++ headers for local integrations.</p>
+        </section>
+        <section class="native-tabpanel" id="native-panel-macos" role="tabpanel" aria-labelledby="native-tab-macos" hidden>
+          <p>macOS package with universal binaries and headers for Apple Silicon and Intel.</p>
+        </section>
+        <section class="native-tabpanel" id="native-panel-linux" role="tabpanel" aria-labelledby="native-tab-linux" hidden>
+          <p>Linux package with shared objects and headers for distribution-ready deployments.</p>
+        </section>
+      </div>
+    </section>
+
+    <section id="web-sdk" class="panel">
+      <h2>libcad Web SDK</h2>
+      <p>Browser-ready SDK focused on WebAssembly and lightweight delivery.</p>
+    </section>
+
+    <section id="app-sdk" class="panel">
+      <h2>libcad App SDK</h2>
+      <p>Toolkit for building full applications on top of the libcad core.</p>
+    </section>
+
+    <section id="democad" class="panel">
+      <h2>democad</h2>
+      <p>Reference application showcasing libcad capabilities end to end.</p>
+      <div class="native-tabs" aria-label="democad platforms">
+        <div class="native-tablist" role="tablist" aria-label="democad platform tabs">
+          <button class="native-tab is-active" id="democad-tab-windows" type="button" role="tab" aria-selected="true" aria-controls="democad-panel-windows">Windows</button>
+          <button class="native-tab" id="democad-tab-macos" type="button" role="tab" aria-selected="false" aria-controls="democad-panel-macos" tabindex="-1">macOS</button>
+          <button class="native-tab" id="democad-tab-linux" type="button" role="tab" aria-selected="false" aria-controls="democad-panel-linux" tabindex="-1">Linux</button>
+        </div>
+        <section class="native-tabpanel" id="democad-panel-windows" role="tabpanel" aria-labelledby="democad-tab-windows">
+          <p>Windows build of democad for validating libcad behavior in a full desktop app.</p>
+        </section>
+        <section class="native-tabpanel" id="democad-panel-macos" role="tabpanel" aria-labelledby="democad-tab-macos" hidden>
+          <p>macOS build of democad for testing UI and rendering integration workflows.</p>
+        </section>
+        <section class="native-tabpanel" id="democad-panel-linux" role="tabpanel" aria-labelledby="democad-tab-linux" hidden>
+          <p>Linux build of democad for open tooling pipelines and deployment checks.</p>
+        </section>
+      </div>
+    </section>
+  </main>
+  <script>
+    (() => {
+      const tablists = Array.from(document.querySelectorAll(".native-tablist"));
+      if (!tablists.length) return;
+
+      tablists.forEach((tablist) => {
+        const tabs = Array.from(tablist.querySelectorAll(".native-tab"));
+        const panels = tabs.map((tab) => document.getElementById(tab.getAttribute("aria-controls")));
+
+        function setActive(nextTab) {
+          tabs.forEach((tab, index) => {
+            const active = tab === nextTab;
+            tab.classList.toggle("is-active", active);
+            tab.setAttribute("aria-selected", active ? "true" : "false");
+            tab.tabIndex = active ? 0 : -1;
+            if (panels[index]) panels[index].hidden = !active;
+          });
+        }
+
+        tablist.addEventListener("click", (event) => {
+          const tab = event.target.closest(".native-tab");
+          if (!tab) return;
+          setActive(tab);
+        });
+
+        tablist.addEventListener("keydown", (event) => {
+          const current = document.activeElement;
+          if (!current || !tablist.contains(current) || !current.classList.contains("native-tab")) return;
+          const index = tabs.indexOf(current);
+          if (index === -1) return;
+          let nextIndex = index;
+          if (event.key === "ArrowRight") nextIndex = (index + 1) % tabs.length;
+          if (event.key === "ArrowLeft") nextIndex = (index - 1 + tabs.length) % tabs.length;
+          if (nextIndex === index) return;
+          event.preventDefault();
+          tabs[nextIndex].focus();
+          setActive(tabs[nextIndex]);
+        });
+      });
+    })();
+  </script>
+</body>
+
+</html>

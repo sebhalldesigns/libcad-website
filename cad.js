@@ -4737,6 +4737,18 @@ var findStringEnd = (heapOrArray, idx, maxBytesToRead, ignoreNul) => {
     };
   var _glBindBuffer = _emscripten_glBindBuffer;
 
+  var _emscripten_glBindFramebuffer = (target, framebuffer) => {
+  
+      GLctx.bindFramebuffer(target, GL.framebuffers[framebuffer]);
+  
+    };
+  var _glBindFramebuffer = _emscripten_glBindFramebuffer;
+
+  var _emscripten_glBindTexture = (target, texture) => {
+      GLctx.bindTexture(target, GL.textures[texture]);
+    };
+  var _glBindTexture = _emscripten_glBindTexture;
+
   var _emscripten_glBindVertexArray = (vao) => {
       GLctx.bindVertexArray(GL.vaos[vao]);
       var ibo = GLctx.getParameter(0x8895 /*ELEMENT_ARRAY_BUFFER_BINDING*/);
@@ -4768,6 +4780,9 @@ var findStringEnd = (heapOrArray, idx, maxBytesToRead, ignoreNul) => {
       GLctx.bufferData(target, data ? HEAPU8.subarray(data, data+size) : size, usage);
     };
   var _glBufferData = _emscripten_glBufferData;
+
+  var _emscripten_glCheckFramebufferStatus = (x0) => GLctx.checkFramebufferStatus(x0);
+  var _glCheckFramebufferStatus = _emscripten_glCheckFramebufferStatus;
 
   var _emscripten_glClear = (x0) => GLctx.clear(x0);
   var _glClear = _emscripten_glClear;
@@ -4844,6 +4859,55 @@ var findStringEnd = (heapOrArray, idx, maxBytesToRead, ignoreNul) => {
     };
   var _glDrawArraysInstanced = _emscripten_glDrawArraysInstanced;
 
+  var _emscripten_glDrawElements = (mode, count, type, indices) => {
+      var buf;
+      var vertexes = 0;
+      if (!GLctx.currentElementArrayBufferBinding) {
+        var size = GL.calcBufLength(1, type, 0, count);
+        buf = GL.getTempIndexBuffer(size);
+        GLctx.bindBuffer(0x8893 /*GL_ELEMENT_ARRAY_BUFFER*/, buf);
+        GLctx.bufferSubData(0x8893 /*GL_ELEMENT_ARRAY_BUFFER*/,
+                            0,
+                            HEAPU8.subarray(indices, indices + size));
+        
+        // Calculating vertex count if shader's attribute data is on client side
+        if (count > 0) {
+          for (var i = 0; i < GL.currentContext.maxVertexAttribs; ++i) {
+            var cb = GL.currentContext.clientBuffers[i];
+            if (cb.clientside && cb.enabled) {
+              let arrayClass;
+              switch(type) {
+                case 0x1401 /* GL_UNSIGNED_BYTE */: arrayClass = Uint8Array; break;
+                case 0x1403 /* GL_UNSIGNED_SHORT */: arrayClass = Uint16Array; break;
+                case 0x1405 /* GL_UNSIGNED_INT */: arrayClass = Uint32Array; break;
+                default:
+                  GL.recordError(0x502 /* GL_INVALID_OPERATION */);
+                  return;
+              }
+  
+              vertexes = new arrayClass(HEAPU8.buffer, indices, count).reduce((max, current) => Math.max(max, current)) + 1;
+              break;
+            }
+          }
+        }
+  
+        // the index is now 0
+        indices = 0;
+      }
+  
+      // bind any client-side buffers
+      GL.preDrawHandleClientVertexAttribBindings(vertexes);
+  
+      GLctx.drawElements(mode, count, type, indices);
+  
+      GL.postDrawHandleClientVertexAttribBindings(count);
+  
+      if (!GLctx.currentElementArrayBufferBinding) {
+        GLctx.bindBuffer(0x8893 /*GL_ELEMENT_ARRAY_BUFFER*/, null);
+      }
+    };
+  var _glDrawElements = _emscripten_glDrawElements;
+
   var _emscripten_glEnable = (x0) => GLctx.enable(x0);
   var _glEnable = _emscripten_glEnable;
 
@@ -4854,11 +4918,29 @@ var findStringEnd = (heapOrArray, idx, maxBytesToRead, ignoreNul) => {
     };
   var _glEnableVertexAttribArray = _emscripten_glEnableVertexAttribArray;
 
+  var _emscripten_glFramebufferTexture2D = (target, attachment, textarget, texture, level) => {
+      GLctx.framebufferTexture2D(target, attachment, textarget,
+                                      GL.textures[texture], level);
+    };
+  var _glFramebufferTexture2D = _emscripten_glFramebufferTexture2D;
+
   var _emscripten_glGenBuffers = (n, buffers) => {
       GL.genObject(n, buffers, 'createBuffer', GL.buffers
         );
     };
   var _glGenBuffers = _emscripten_glGenBuffers;
+
+  var _emscripten_glGenFramebuffers = (n, ids) => {
+      GL.genObject(n, ids, 'createFramebuffer', GL.framebuffers
+        );
+    };
+  var _glGenFramebuffers = _emscripten_glGenFramebuffers;
+
+  var _emscripten_glGenTextures = (n, textures) => {
+      GL.genObject(n, textures, 'createTexture', GL.textures
+        );
+    };
+  var _glGenTextures = _emscripten_glGenTextures;
 
   var _emscripten_glGenVertexArrays = (n, arrays) => {
       GL.genObject(n, arrays, 'createVertexArray', GL.vaos
@@ -5071,12 +5153,131 @@ var findStringEnd = (heapOrArray, idx, maxBytesToRead, ignoreNul) => {
     };
   var _glLinkProgram = _emscripten_glLinkProgram;
 
+  var _emscripten_glPolygonOffset = (x0, x1) => GLctx.polygonOffset(x0, x1);
+  var _glPolygonOffset = _emscripten_glPolygonOffset;
+
+  var computeUnpackAlignedImageSize = (width, height, sizePerPixel) => {
+      function roundedToNextMultipleOf(x, y) {
+        return (x + y - 1) & -y;
+      }
+      var plainRowSize = (GL.unpackRowLength || width) * sizePerPixel;
+      var alignedRowSize = roundedToNextMultipleOf(plainRowSize, GL.unpackAlignment);
+      return height * alignedRowSize;
+    };
+  
+  var colorChannelsInGlTextureFormat = (format) => {
+      // Micro-optimizations for size: map format to size by subtracting smallest
+      // enum value (0x1902) from all values first.  Also omit the most common
+      // size value (1) from the list, which is assumed by formats not on the
+      // list.
+      var colorChannels = {
+        // 0x1902 /* GL_DEPTH_COMPONENT */ - 0x1902: 1,
+        // 0x1906 /* GL_ALPHA */ - 0x1902: 1,
+        5: 3,
+        6: 4,
+        // 0x1909 /* GL_LUMINANCE */ - 0x1902: 1,
+        8: 2,
+        29502: 3,
+        29504: 4,
+        // 0x1903 /* GL_RED */ - 0x1902: 1,
+        26917: 2,
+        26918: 2,
+        // 0x8D94 /* GL_RED_INTEGER */ - 0x1902: 1,
+        29846: 3,
+        29847: 4
+      };
+      return colorChannels[format - 0x1902]||1;
+    };
+  
+  var heapObjectForWebGLType = (type) => {
+      // Micro-optimization for size: Subtract lowest GL enum number (0x1400/* GL_BYTE */) from type to compare
+      // smaller values for the heap, for shorter generated code size.
+      // Also the type HEAPU16 is not tested for explicitly, but any unrecognized type will return out HEAPU16.
+      // (since most types are HEAPU16)
+      type -= 0x1400;
+      if (type == 0) return HEAP8;
+  
+      if (type == 1) return HEAPU8;
+  
+      if (type == 2) return HEAP16;
+  
+      if (type == 4) return HEAP32;
+  
+      if (type == 6) return HEAPF32;
+  
+      if (type == 5
+        || type == 28922
+        || type == 28520
+        || type == 30779
+        || type == 30782
+        )
+        return HEAPU32;
+  
+      return HEAPU16;
+    };
+  
+  var toTypedArrayIndex = (pointer, heap) =>
+      pointer >>> (31 - Math.clz32(heap.BYTES_PER_ELEMENT));
+  
+  var emscriptenWebGLGetTexPixelData = (type, format, width, height, pixels, internalFormat) => {
+      var heap = heapObjectForWebGLType(type);
+      var sizePerPixel = colorChannelsInGlTextureFormat(format) * heap.BYTES_PER_ELEMENT;
+      var bytes = computeUnpackAlignedImageSize(width, height, sizePerPixel);
+      return heap.subarray(toTypedArrayIndex(pixels, heap), toTypedArrayIndex(pixels + bytes, heap));
+    };
+  
+  
+  
+  var _emscripten_glReadPixels = (x, y, width, height, format, type, pixels) => {
+      if (GL.currentContext.version >= 2) {
+        if (GLctx.currentPixelPackBufferBinding) {
+          GLctx.readPixels(x, y, width, height, format, type, pixels);
+          return;
+        }
+        var heap = heapObjectForWebGLType(type);
+        var target = toTypedArrayIndex(pixels, heap);
+        GLctx.readPixels(x, y, width, height, format, type, heap, target);
+        return;
+      }
+      var pixelData = emscriptenWebGLGetTexPixelData(type, format, width, height, pixels, format);
+      if (!pixelData) {
+        GL.recordError(0x500/*GL_INVALID_ENUM*/);
+        return;
+      }
+      GLctx.readPixels(x, y, width, height, format, type, pixelData);
+    };
+  var _glReadPixels = _emscripten_glReadPixels;
+
   var _emscripten_glShaderSource = (shader, count, string, length) => {
       var source = GL.getSource(shader, count, string, length);
   
       GLctx.shaderSource(GL.shaders[shader], source);
     };
   var _glShaderSource = _emscripten_glShaderSource;
+
+  
+  
+  
+  var _emscripten_glTexImage2D = (target, level, internalFormat, width, height, border, format, type, pixels) => {
+      if (GL.currentContext.version >= 2) {
+        if (GLctx.currentPixelUnpackBufferBinding) {
+          GLctx.texImage2D(target, level, internalFormat, width, height, border, format, type, pixels);
+          return;
+        }
+        if (pixels) {
+          var heap = heapObjectForWebGLType(type);
+          var index = toTypedArrayIndex(pixels, heap);
+          GLctx.texImage2D(target, level, internalFormat, width, height, border, format, type, heap, index);
+          return;
+        }
+      }
+      var pixelData = pixels ? emscriptenWebGLGetTexPixelData(type, format, width, height, pixels, internalFormat) : null;
+      GLctx.texImage2D(target, level, internalFormat, width, height, border, format, type, pixelData);
+    };
+  var _glTexImage2D = _emscripten_glTexImage2D;
+
+  var _emscripten_glTexParameteri = (x0, x1, x2) => GLctx.texParameteri(x0, x1, x2);
+  var _glTexParameteri = _emscripten_glTexParameteri;
 
   var webglGetUniformLocation = (location) => {
       var p = GLctx.currentProgram;
@@ -5097,10 +5298,28 @@ var findStringEnd = (heapOrArray, idx, maxBytesToRead, ignoreNul) => {
       }
     };
   
+  var _emscripten_glUniform1f = (location, v0) => {
+      GLctx.uniform1f(webglGetUniformLocation(location), v0);
+    };
+  var _glUniform1f = _emscripten_glUniform1f;
+
+  
   var _emscripten_glUniform2f = (location, v0, v1) => {
       GLctx.uniform2f(webglGetUniformLocation(location), v0, v1);
     };
   var _glUniform2f = _emscripten_glUniform2f;
+
+  
+  var _emscripten_glUniform3f = (location, v0, v1, v2) => {
+      GLctx.uniform3f(webglGetUniformLocation(location), v0, v1, v2);
+    };
+  var _glUniform3f = _emscripten_glUniform3f;
+
+  
+  var _emscripten_glUniform4f = (location, v0, v1, v2, v3) => {
+      GLctx.uniform4f(webglGetUniformLocation(location), v0, v1, v2, v3);
+    };
+  var _glUniform4f = _emscripten_glUniform4f;
 
   
   var miniTempWebGLFloatBuffers = [];
@@ -5182,6 +5401,7 @@ var findStringEnd = (heapOrArray, idx, maxBytesToRead, ignoreNul) => {
   var _emscripten_glViewport = (x0, x1, x2, x3) => GLctx.viewport(x0, x1, x2, x3);
   var _glViewport = _emscripten_glViewport;
 
+
   FS.createPreloadedFile = FS_createPreloadedFile;
   FS.preloadFile = FS_preloadFile;
   FS.staticInit();;
@@ -5242,6 +5462,7 @@ if (Module['wasmBinary']) wasmBinary = Module['wasmBinary'];
 }
 
 // Begin runtime exports
+  Module['UTF8ToString'] = UTF8ToString;
   var missingLibrarySymbols = [
   'writeI53ToI64',
   'writeI53ToI64Clamped',
@@ -5369,12 +5590,7 @@ if (Module['wasmBinary']) wasmBinary = Module['wasmBinary'];
   'getSocketAddress',
   'FS_mkdirTree',
   '_setNetworkCallback',
-  'heapObjectForWebGLType',
-  'toTypedArrayIndex',
   'emscriptenWebGLGet',
-  'computeUnpackAlignedImageSize',
-  'colorChannelsInGlTextureFormat',
-  'emscriptenWebGLGetTexPixelData',
   'emscriptenWebGLGetUniform',
   'emscriptenWebGLGetVertexAttrib',
   '__glGetActiveAttribOrUniform',
@@ -5454,7 +5670,6 @@ missingLibrarySymbols.forEach(missingLibrarySymbol)
   'PATH_FS',
   'UTF8Decoder',
   'UTF8ArrayToString',
-  'UTF8ToString',
   'stringToUTF8Array',
   'stringToUTF8',
   'lengthBytesUTF8',
@@ -5627,6 +5842,8 @@ missingLibrarySymbols.forEach(missingLibrarySymbol)
   'tempFixedLengthArray',
   'miniTempWebGLFloatBuffers',
   'miniTempWebGLIntBuffers',
+  'heapObjectForWebGLType',
+  'toTypedArrayIndex',
   'webgl_enable_ANGLE_instanced_arrays',
   'webgl_enable_OES_vertex_array_object',
   'webgl_enable_WEBGL_draw_buffers',
@@ -5635,6 +5852,9 @@ missingLibrarySymbols.forEach(missingLibrarySymbol)
   'webgl_enable_EXT_clip_control',
   'webgl_enable_WEBGL_polygon_mode',
   'GL',
+  'computeUnpackAlignedImageSize',
+  'colorChannelsInGlTextureFormat',
+  'emscriptenWebGLGetTexPixelData',
   'webglGetUniformLocation',
   'webglPrepareUniformLocationsBeforeFirstUse',
   'webglGetLeftBracePos',
@@ -5673,12 +5893,34 @@ var _cad_cursor_lost = Module['_cad_cursor_lost'] = makeInvalidEarlyAccess('_cad
 var _cad_set_cursor_button_state = Module['_cad_set_cursor_button_state'] = makeInvalidEarlyAccess('_cad_set_cursor_button_state');
 var _cad_set_modifier_state = Module['_cad_set_modifier_state'] = makeInvalidEarlyAccess('_cad_set_modifier_state');
 var _cad_set_viewport = Module['_cad_set_viewport'] = makeInvalidEarlyAccess('_cad_set_viewport');
+var _cad_set_dpi_scale = Module['_cad_set_dpi_scale'] = makeInvalidEarlyAccess('_cad_set_dpi_scale');
 var _cad_render_viewport = Module['_cad_render_viewport'] = makeInvalidEarlyAccess('_cad_render_viewport');
 var _cad_init_viewport = Module['_cad_init_viewport'] = makeInvalidEarlyAccess('_cad_init_viewport');
+var _cad_pick_entity = Module['_cad_pick_entity'] = makeInvalidEarlyAccess('_cad_pick_entity');
+var _type_is_a = Module['_type_is_a'] = makeInvalidEarlyAccess('_type_is_a');
+var _cad_set_hovered_entity = Module['_cad_set_hovered_entity'] = makeInvalidEarlyAccess('_cad_set_hovered_entity');
+var _cad_get_hovered_entity = Module['_cad_get_hovered_entity'] = makeInvalidEarlyAccess('_cad_get_hovered_entity');
+var _cad_set_selected_entity = Module['_cad_set_selected_entity'] = makeInvalidEarlyAccess('_cad_set_selected_entity');
+var _cad_get_selected_entity = Module['_cad_get_selected_entity'] = makeInvalidEarlyAccess('_cad_get_selected_entity');
+var _cad_get_document_json = Module['_cad_get_document_json'] = makeInvalidEarlyAccess('_cad_get_document_json');
+var _cad_create_sketch_on_plane = Module['_cad_create_sketch_on_plane'] = makeInvalidEarlyAccess('_cad_create_sketch_on_plane');
+var _cad_set_object_visibility = Module['_cad_set_object_visibility'] = makeInvalidEarlyAccess('_cad_set_object_visibility');
+var _cad_enter_sketch_mode = Module['_cad_enter_sketch_mode'] = makeInvalidEarlyAccess('_cad_enter_sketch_mode');
+var _cad_exit_sketch_mode = Module['_cad_exit_sketch_mode'] = makeInvalidEarlyAccess('_cad_exit_sketch_mode');
+var _cad_create_line_in_active_sketch = Module['_cad_create_line_in_active_sketch'] = makeInvalidEarlyAccess('_cad_create_line_in_active_sketch');
+var _cad_create_line_in_active_sketch_screen = Module['_cad_create_line_in_active_sketch_screen'] = makeInvalidEarlyAccess('_cad_create_line_in_active_sketch_screen');
+var _cad_create_circle_in_active_sketch = Module['_cad_create_circle_in_active_sketch'] = makeInvalidEarlyAccess('_cad_create_circle_in_active_sketch');
+var _cad_create_circle_in_active_sketch_screen = Module['_cad_create_circle_in_active_sketch_screen'] = makeInvalidEarlyAccess('_cad_create_circle_in_active_sketch_screen');
+var _cad_create_corner_rectangle_in_active_sketch = Module['_cad_create_corner_rectangle_in_active_sketch'] = makeInvalidEarlyAccess('_cad_create_corner_rectangle_in_active_sketch');
+var _cad_create_corner_rectangle_in_active_sketch_screen = Module['_cad_create_corner_rectangle_in_active_sketch_screen'] = makeInvalidEarlyAccess('_cad_create_corner_rectangle_in_active_sketch_screen');
 var _cad_axis_delta = Module['_cad_axis_delta'] = makeInvalidEarlyAccess('_cad_axis_delta');
+var _cad_camera_zoom = Module['_cad_camera_zoom'] = makeInvalidEarlyAccess('_cad_camera_zoom');
+var _cad_camera_orbit = Module['_cad_camera_orbit'] = makeInvalidEarlyAccess('_cad_camera_orbit');
+var _cad_camera_pan = Module['_cad_camera_pan'] = makeInvalidEarlyAccess('_cad_camera_pan');
 var _cad_get_cursor_type = Module['_cad_get_cursor_type'] = makeInvalidEarlyAccess('_cad_get_cursor_type');
 var _cad_start_modal_tool = Module['_cad_start_modal_tool'] = makeInvalidEarlyAccess('_cad_start_modal_tool');
 var _cad_clear_modal_tool = Module['_cad_clear_modal_tool'] = makeInvalidEarlyAccess('_cad_clear_modal_tool');
+var _cad_extrude_selected = Module['_cad_extrude_selected'] = makeInvalidEarlyAccess('_cad_extrude_selected');
 var _cad_save_json = Module['_cad_save_json'] = makeInvalidEarlyAccess('_cad_save_json');
 var _cad_load_json = Module['_cad_load_json'] = makeInvalidEarlyAccess('_cad_load_json');
 var _malloc = makeInvalidEarlyAccess('_malloc');
@@ -5686,7 +5928,6 @@ var _type_register_static = Module['_type_register_static'] = makeInvalidEarlyAc
 var _type_from_name = Module['_type_from_name'] = makeInvalidEarlyAccess('_type_from_name');
 var _type_class_peek = Module['_type_class_peek'] = makeInvalidEarlyAccess('_type_class_peek');
 var _type_name = Module['_type_name'] = makeInvalidEarlyAccess('_type_name');
-var _type_is_a = Module['_type_is_a'] = makeInvalidEarlyAccess('_type_is_a');
 var _type_instance_new = Module['_type_instance_new'] = makeInvalidEarlyAccess('_type_instance_new');
 var _type_instance_free = Module['_type_instance_free'] = makeInvalidEarlyAccess('_type_instance_free');
 var _strerror = makeInvalidEarlyAccess('_strerror');
@@ -5711,12 +5952,34 @@ function assignWasmExports(wasmExports) {
   assert(typeof wasmExports['cad_set_cursor_button_state'] != 'undefined', 'missing Wasm export: cad_set_cursor_button_state');
   assert(typeof wasmExports['cad_set_modifier_state'] != 'undefined', 'missing Wasm export: cad_set_modifier_state');
   assert(typeof wasmExports['cad_set_viewport'] != 'undefined', 'missing Wasm export: cad_set_viewport');
+  assert(typeof wasmExports['cad_set_dpi_scale'] != 'undefined', 'missing Wasm export: cad_set_dpi_scale');
   assert(typeof wasmExports['cad_render_viewport'] != 'undefined', 'missing Wasm export: cad_render_viewport');
   assert(typeof wasmExports['cad_init_viewport'] != 'undefined', 'missing Wasm export: cad_init_viewport');
+  assert(typeof wasmExports['cad_pick_entity'] != 'undefined', 'missing Wasm export: cad_pick_entity');
+  assert(typeof wasmExports['type_is_a'] != 'undefined', 'missing Wasm export: type_is_a');
+  assert(typeof wasmExports['cad_set_hovered_entity'] != 'undefined', 'missing Wasm export: cad_set_hovered_entity');
+  assert(typeof wasmExports['cad_get_hovered_entity'] != 'undefined', 'missing Wasm export: cad_get_hovered_entity');
+  assert(typeof wasmExports['cad_set_selected_entity'] != 'undefined', 'missing Wasm export: cad_set_selected_entity');
+  assert(typeof wasmExports['cad_get_selected_entity'] != 'undefined', 'missing Wasm export: cad_get_selected_entity');
+  assert(typeof wasmExports['cad_get_document_json'] != 'undefined', 'missing Wasm export: cad_get_document_json');
+  assert(typeof wasmExports['cad_create_sketch_on_plane'] != 'undefined', 'missing Wasm export: cad_create_sketch_on_plane');
+  assert(typeof wasmExports['cad_set_object_visibility'] != 'undefined', 'missing Wasm export: cad_set_object_visibility');
+  assert(typeof wasmExports['cad_enter_sketch_mode'] != 'undefined', 'missing Wasm export: cad_enter_sketch_mode');
+  assert(typeof wasmExports['cad_exit_sketch_mode'] != 'undefined', 'missing Wasm export: cad_exit_sketch_mode');
+  assert(typeof wasmExports['cad_create_line_in_active_sketch'] != 'undefined', 'missing Wasm export: cad_create_line_in_active_sketch');
+  assert(typeof wasmExports['cad_create_line_in_active_sketch_screen'] != 'undefined', 'missing Wasm export: cad_create_line_in_active_sketch_screen');
+  assert(typeof wasmExports['cad_create_circle_in_active_sketch'] != 'undefined', 'missing Wasm export: cad_create_circle_in_active_sketch');
+  assert(typeof wasmExports['cad_create_circle_in_active_sketch_screen'] != 'undefined', 'missing Wasm export: cad_create_circle_in_active_sketch_screen');
+  assert(typeof wasmExports['cad_create_corner_rectangle_in_active_sketch'] != 'undefined', 'missing Wasm export: cad_create_corner_rectangle_in_active_sketch');
+  assert(typeof wasmExports['cad_create_corner_rectangle_in_active_sketch_screen'] != 'undefined', 'missing Wasm export: cad_create_corner_rectangle_in_active_sketch_screen');
   assert(typeof wasmExports['cad_axis_delta'] != 'undefined', 'missing Wasm export: cad_axis_delta');
+  assert(typeof wasmExports['cad_camera_zoom'] != 'undefined', 'missing Wasm export: cad_camera_zoom');
+  assert(typeof wasmExports['cad_camera_orbit'] != 'undefined', 'missing Wasm export: cad_camera_orbit');
+  assert(typeof wasmExports['cad_camera_pan'] != 'undefined', 'missing Wasm export: cad_camera_pan');
   assert(typeof wasmExports['cad_get_cursor_type'] != 'undefined', 'missing Wasm export: cad_get_cursor_type');
   assert(typeof wasmExports['cad_start_modal_tool'] != 'undefined', 'missing Wasm export: cad_start_modal_tool');
   assert(typeof wasmExports['cad_clear_modal_tool'] != 'undefined', 'missing Wasm export: cad_clear_modal_tool');
+  assert(typeof wasmExports['cad_extrude_selected'] != 'undefined', 'missing Wasm export: cad_extrude_selected');
   assert(typeof wasmExports['cad_save_json'] != 'undefined', 'missing Wasm export: cad_save_json');
   assert(typeof wasmExports['cad_load_json'] != 'undefined', 'missing Wasm export: cad_load_json');
   assert(typeof wasmExports['malloc'] != 'undefined', 'missing Wasm export: malloc');
@@ -5724,7 +5987,6 @@ function assignWasmExports(wasmExports) {
   assert(typeof wasmExports['type_from_name'] != 'undefined', 'missing Wasm export: type_from_name');
   assert(typeof wasmExports['type_class_peek'] != 'undefined', 'missing Wasm export: type_class_peek');
   assert(typeof wasmExports['type_name'] != 'undefined', 'missing Wasm export: type_name');
-  assert(typeof wasmExports['type_is_a'] != 'undefined', 'missing Wasm export: type_is_a');
   assert(typeof wasmExports['type_instance_new'] != 'undefined', 'missing Wasm export: type_instance_new');
   assert(typeof wasmExports['type_instance_free'] != 'undefined', 'missing Wasm export: type_instance_free');
   assert(typeof wasmExports['strerror'] != 'undefined', 'missing Wasm export: strerror');
@@ -5746,12 +6008,34 @@ function assignWasmExports(wasmExports) {
   _cad_set_cursor_button_state = Module['_cad_set_cursor_button_state'] = createExportWrapper('cad_set_cursor_button_state', 2);
   _cad_set_modifier_state = Module['_cad_set_modifier_state'] = createExportWrapper('cad_set_modifier_state', 2);
   _cad_set_viewport = Module['_cad_set_viewport'] = createExportWrapper('cad_set_viewport', 6);
+  _cad_set_dpi_scale = Module['_cad_set_dpi_scale'] = createExportWrapper('cad_set_dpi_scale', 1);
   _cad_render_viewport = Module['_cad_render_viewport'] = createExportWrapper('cad_render_viewport', 0);
   _cad_init_viewport = Module['_cad_init_viewport'] = createExportWrapper('cad_init_viewport', 0);
+  _cad_pick_entity = Module['_cad_pick_entity'] = createExportWrapper('cad_pick_entity', 2);
+  _type_is_a = Module['_type_is_a'] = createExportWrapper('type_is_a', 2);
+  _cad_set_hovered_entity = Module['_cad_set_hovered_entity'] = createExportWrapper('cad_set_hovered_entity', 1);
+  _cad_get_hovered_entity = Module['_cad_get_hovered_entity'] = createExportWrapper('cad_get_hovered_entity', 0);
+  _cad_set_selected_entity = Module['_cad_set_selected_entity'] = createExportWrapper('cad_set_selected_entity', 1);
+  _cad_get_selected_entity = Module['_cad_get_selected_entity'] = createExportWrapper('cad_get_selected_entity', 0);
+  _cad_get_document_json = Module['_cad_get_document_json'] = createExportWrapper('cad_get_document_json', 0);
+  _cad_create_sketch_on_plane = Module['_cad_create_sketch_on_plane'] = createExportWrapper('cad_create_sketch_on_plane', 1);
+  _cad_set_object_visibility = Module['_cad_set_object_visibility'] = createExportWrapper('cad_set_object_visibility', 2);
+  _cad_enter_sketch_mode = Module['_cad_enter_sketch_mode'] = createExportWrapper('cad_enter_sketch_mode', 1);
+  _cad_exit_sketch_mode = Module['_cad_exit_sketch_mode'] = createExportWrapper('cad_exit_sketch_mode', 0);
+  _cad_create_line_in_active_sketch = Module['_cad_create_line_in_active_sketch'] = createExportWrapper('cad_create_line_in_active_sketch', 0);
+  _cad_create_line_in_active_sketch_screen = Module['_cad_create_line_in_active_sketch_screen'] = createExportWrapper('cad_create_line_in_active_sketch_screen', 4);
+  _cad_create_circle_in_active_sketch = Module['_cad_create_circle_in_active_sketch'] = createExportWrapper('cad_create_circle_in_active_sketch', 0);
+  _cad_create_circle_in_active_sketch_screen = Module['_cad_create_circle_in_active_sketch_screen'] = createExportWrapper('cad_create_circle_in_active_sketch_screen', 4);
+  _cad_create_corner_rectangle_in_active_sketch = Module['_cad_create_corner_rectangle_in_active_sketch'] = createExportWrapper('cad_create_corner_rectangle_in_active_sketch', 0);
+  _cad_create_corner_rectangle_in_active_sketch_screen = Module['_cad_create_corner_rectangle_in_active_sketch_screen'] = createExportWrapper('cad_create_corner_rectangle_in_active_sketch_screen', 4);
   _cad_axis_delta = Module['_cad_axis_delta'] = createExportWrapper('cad_axis_delta', 2);
+  _cad_camera_zoom = Module['_cad_camera_zoom'] = createExportWrapper('cad_camera_zoom', 1);
+  _cad_camera_orbit = Module['_cad_camera_orbit'] = createExportWrapper('cad_camera_orbit', 2);
+  _cad_camera_pan = Module['_cad_camera_pan'] = createExportWrapper('cad_camera_pan', 2);
   _cad_get_cursor_type = Module['_cad_get_cursor_type'] = createExportWrapper('cad_get_cursor_type', 0);
   _cad_start_modal_tool = Module['_cad_start_modal_tool'] = createExportWrapper('cad_start_modal_tool', 1);
   _cad_clear_modal_tool = Module['_cad_clear_modal_tool'] = createExportWrapper('cad_clear_modal_tool', 0);
+  _cad_extrude_selected = Module['_cad_extrude_selected'] = createExportWrapper('cad_extrude_selected', 0);
   _cad_save_json = Module['_cad_save_json'] = createExportWrapper('cad_save_json', 1);
   _cad_load_json = Module['_cad_load_json'] = createExportWrapper('cad_load_json', 1);
   _malloc = createExportWrapper('malloc', 1);
@@ -5759,7 +6043,6 @@ function assignWasmExports(wasmExports) {
   _type_from_name = Module['_type_from_name'] = createExportWrapper('type_from_name', 1);
   _type_class_peek = Module['_type_class_peek'] = createExportWrapper('type_class_peek', 1);
   _type_name = Module['_type_name'] = createExportWrapper('type_name', 1);
-  _type_is_a = Module['_type_is_a'] = createExportWrapper('type_is_a', 2);
   _type_instance_new = Module['_type_instance_new'] = createExportWrapper('type_instance_new', 1);
   _type_instance_free = Module['_type_instance_free'] = createExportWrapper('type_instance_free', 1);
   _strerror = createExportWrapper('strerror', 1);
@@ -5816,11 +6099,17 @@ var wasmImports = {
   /** @export */
   glBindBuffer: _glBindBuffer,
   /** @export */
+  glBindFramebuffer: _glBindFramebuffer,
+  /** @export */
+  glBindTexture: _glBindTexture,
+  /** @export */
   glBindVertexArray: _glBindVertexArray,
   /** @export */
   glBlendFunc: _glBlendFunc,
   /** @export */
   glBufferData: _glBufferData,
+  /** @export */
+  glCheckFramebufferStatus: _glCheckFramebufferStatus,
   /** @export */
   glClear: _glClear,
   /** @export */
@@ -5842,11 +6131,19 @@ var wasmImports = {
   /** @export */
   glDrawArraysInstanced: _glDrawArraysInstanced,
   /** @export */
+  glDrawElements: _glDrawElements,
+  /** @export */
   glEnable: _glEnable,
   /** @export */
   glEnableVertexAttribArray: _glEnableVertexAttribArray,
   /** @export */
+  glFramebufferTexture2D: _glFramebufferTexture2D,
+  /** @export */
   glGenBuffers: _glGenBuffers,
+  /** @export */
+  glGenFramebuffers: _glGenFramebuffers,
+  /** @export */
+  glGenTextures: _glGenTextures,
   /** @export */
   glGenVertexArrays: _glGenVertexArrays,
   /** @export */
@@ -5862,9 +6159,23 @@ var wasmImports = {
   /** @export */
   glLinkProgram: _glLinkProgram,
   /** @export */
+  glPolygonOffset: _glPolygonOffset,
+  /** @export */
+  glReadPixels: _glReadPixels,
+  /** @export */
   glShaderSource: _glShaderSource,
   /** @export */
+  glTexImage2D: _glTexImage2D,
+  /** @export */
+  glTexParameteri: _glTexParameteri,
+  /** @export */
+  glUniform1f: _glUniform1f,
+  /** @export */
   glUniform2f: _glUniform2f,
+  /** @export */
+  glUniform3f: _glUniform3f,
+  /** @export */
+  glUniform4f: _glUniform4f,
   /** @export */
   glUniformMatrix4fv: _glUniformMatrix4fv,
   /** @export */
